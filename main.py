@@ -4,7 +4,7 @@ import nibabel as nib
 import keras
 
 from keras.models import Sequential, load_model
-from keras.layers import Dense, Activation, Flatten, Add
+from keras.layers import Dense, Activation, Flatten, Add, BatchNormalization
 from keras.layers import Conv3D
 from keras import regularizers, optimizers 
 
@@ -32,15 +32,19 @@ model = Sequential()
 model.add(Conv3D(64, (7, 7, 7), input_shape=(None, None, None, 1),
                  padding='same', kernel_regularizer=regularizers.l2(0.01),
                  activation='relu'))
+model.add(BatchNormalization())
 model.add(Conv3D(64, (7, 7, 7),
                  padding='same', kernel_regularizer=regularizers.l2(0.01),
                  activation='relu'))
+model.add(BatchNormalization())
 model.add(Conv3D(64, (7, 7, 7),
                  padding='same', kernel_regularizer=regularizers.l2(0.01),
                  activation='relu'))
+model.add(BatchNormalization())
 model.add(Conv3D(64, (7, 7, 7),
                  padding='same', kernel_regularizer=regularizers.l2(0.01),
                  activation='relu'))
+model.add(BatchNormalization())
 model.add(Conv3D(1, (7, 7, 7),
                  padding='same', kernel_regularizer=regularizers.l2(0.01)))
 
@@ -49,7 +53,7 @@ model.add(Conv3D(1, (7, 7, 7),
 print(model.output_shape)
 
 batch_size = 1
-epochs = 5000
+epochs = 200
 
 opt = optimizers.Adam(lr=0.01)
 
@@ -58,7 +62,7 @@ model.compile(loss='mean_squared_error', optimizer=opt)
 # Fit!
 model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs)
 
-model.save('overfitted_model.hd5')
+model.save(d+'overfitted_model.hd5')
 
 print('size is: ', np.size(input))
 print('avg is: ', np.nanmean(input.ravel()))
