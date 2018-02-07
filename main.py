@@ -11,14 +11,23 @@ from keras import regularizers, optimizers
 # Load high/low quality images.
 d = 'data/'
 
-input = nib.load(d+'input.nii.gz').get_data()
-input = input[:,:,:,1::2] - input[:,:,:,0::2] # difference images
-input = np.mean(input, axis=3) # mean
+asl = nib.load(d+'asl.nii.gz').get_data()
+asl = asl[:,:,:,1::2] - asl[:,:,:,0::2] # difference images
+asl = np.mean(asl, axis=3) # mean
+
+m0 = nib.load(d+'calib.nii.gz').get_data()
+t1 = nib.load(d+'struct.nii.gz').get_data()
+
+# Different channel for each type of image.
+input = np.zeros(np.shape(m0) + (3,))
+input[:,:,:,0] = asl
+input[:,:,:,1] = m0
+input[:,:,:,2] = t1
+
+x_train = np.expand_dims(input, axis=0)
 
 output = nib.load(d+'output.nii.gz').get_data()
 
-x_train = np.expand_dims(input, axis=0)
-x_train = np.expand_dims(x_train, axis=-1)
 y_train = np.expand_dims(output, axis=0)
 y_train = np.expand_dims(y_train, axis=-1)
 
@@ -27,31 +36,35 @@ y_test = y_train
 
 
 # Create network architecture.
+conv_reg_w = 0.01
+n_channels = 3
+filter_size = (7, 7, 7)
+
 model = Sequential()
-model.add(Conv3D(64, (7, 7, 7),
-                 padding='same', kernel_regularizer=regularizers.l2(0.01),
-                 activation='relu', input_shape=(None, None, None, 1)))
+model.add(Conv3D(64, filter_size,
+                 padding='same',
+                 activation='relu', input_shape=(None, None, None, n_channels)))
 model.add(BatchNormalization())
-model.add(Conv3D(64, (7, 7, 7),
-                 padding='same', kernel_regularizer=regularizers.l2(0.01),
+model.add(Conv3D(64, filter_size,
+                 padding='same',
                  activation='relu'))
 model.add(BatchNormalization())
-model.add(Conv3D(64, (7, 7, 7),
-                 padding='same', kernel_regularizer=regularizers.l2(0.01),
+model.add(Conv3D(64, filter_size,
+                 padding='same',
                  activation='relu'))
 model.add(BatchNormalization())
-model.add(Conv3D(64, (7, 7, 7),
-                 padding='same', kernel_regularizer=regularizers.l2(0.01),
+model.add(Conv3D(64, filter_size,
+                 padding='same',
                  activation='relu'))
 model.add(BatchNormalization())
-model.add(Conv3D(1, (7, 7, 7),
-                 padding='same', kernel_regularizer=regularizers.l2(0.01)))
+model.add(Conv3D(1, filter_size,
+                 padding='same'))
 
 #model.add(Dense(1, kernel_regularizer=regularizers.l2(0.1),
 #                input_shape=(None, None, None, 1)))
 
 batch_size = 1
-epochs = 200
+epochs = 1000
 
 opt = optimizers.Adam(lr=0.01)
 
