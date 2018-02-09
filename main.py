@@ -38,7 +38,8 @@ y_test = y_train
 # Create network architecture.
 conv_reg_w = 0.01
 n_channels = 3
-filter_size = (7, 7, 7)
+filter_pix = 7
+filter_size = (filter_pix, filter_pix, filter_pix)
 
 model = Sequential()
 model.add(Conv3D(64, filter_size,
