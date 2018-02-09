@@ -3,8 +3,8 @@ import nibabel as nib
 
 import keras
 
-from keras.models import Sequential, load_model
-from keras.layers import Dense, Activation, Flatten, Add, BatchNormalization, TimeDistributed, Average
+from keras.models import Sequential, Model, load_model
+from keras.layers import Dense, Activation, Flatten, Add, BatchNormalization, TimeDistributed, Average, Input
 from keras.layers import Conv3D
 from keras import regularizers, optimizers 
 
@@ -41,25 +41,28 @@ n_channels = 3
 filter_pix = 7
 filter_size = (filter_pix, filter_pix, filter_pix)
 
-model = Sequential()
-model.add(Conv3D(64, filter_size,
+x = Input(shape=(None, None, None, n_channels))
+y = Conv3D(64, filter_size,
+               padding='same',
+               activation='relu', input_shape=(None, None, None, n_channels))(x)
+y = BatchNormalization()(y)
+y = Conv3D(64, filter_size,
                  padding='same',
-                 activation='relu', input_shape=(None, None, None, n_channels)))
-model.add(BatchNormalization())
-model.add(Conv3D(64, filter_size,
-                 padding='same',
-                 activation='relu'))
-model.add(BatchNormalization())
-model.add(Conv3D(64, filter_size,
-                 padding='same',
-                 activation='relu'))
-model.add(BatchNormalization())
-model.add(Conv3D(64, filter_size,
-                 padding='same',
-                 activation='relu'))
-model.add(BatchNormalization())
-model.add(Conv3D(1, filter_size,
-                 padding='same'))
+                 activation='relu')(y)
+y = BatchNormalization()(y)
+y = Conv3D(64, filter_size,
+               padding='same',
+               activation='relu')(y)
+y = BatchNormalization()(y)
+y = Conv3D(64, filter_size,
+               padding='same',
+               activation='relu')(y)
+y = BatchNormalization()(y)
+y = Conv3D(n_channels, filter_size,
+              padding='same')(y)
+y = keras.layers.add([x, y])
+y = Conv3D(1, filter_size,
+              padding='same')(y)
 
 #model.add(Dense(1, kernel_regularizer=regularizers.l2(0.1),
 #                input_shape=(None, None, None, 1)))
@@ -69,6 +72,7 @@ epochs = 1000
 
 opt = optimizers.Adam(lr=0.01)
 
+model = Model(inputs=x, outputs=y)
 model.compile(loss='mean_squared_error', optimizer=opt)
 
 # Fit!
