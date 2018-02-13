@@ -1,4 +1,5 @@
 import numpy as np
+import scipy as sp
 import nibabel as nib
 
 import keras
@@ -36,6 +37,8 @@ class DataGenerator(object):
         return indices
 
     def _data_generation(self, to_use_IDs):
+        augmentation = True
+
         x = np.empty((self.batch_size, self.dim_0, self.dim_1, self.dim_2,
                       len(self.channels)))
         y = np.empty((self.batch_size, self.dim_0, self.dim_1, self.dim_2, 1))
@@ -47,5 +50,48 @@ class DataGenerator(object):
                 x[i,:,:,:,j] = tmp
 
             y[i,:,:,:,0] = nib.load(self.data_dir + '/' + id + '/out.nii.gz').get_data()
+
+        if augmentation:
+            # translation
+            t = np.random.uniform(-5, 5, size=3)
+
+            for i in range(x.shape[0]):
+                y[i,:,:,:,0] = sp.ndimage.interpolation.shift(y[i,:,:,:,0], t)
+
+                for j in range(x.shape[-1]):
+                    x[i,:,:,:,j] = sp.ndimage.interpolation.shift(x[i,:,:,:,j], t)
+
+            # rotation
+            r = np.random.uniform(-20, 20, size=3)
+
+
+            # this rotation is around the origin, so need to translate after
+            rot = lambda inp, ang, ax: sp.ndimage.interpolation.rotate(inp, ang, ax, reshape=False)
+            all_rots = lambda inp: rot(rot(rot(inp,
+                                       r[0], (0, 1)),
+                                           r[1], (0, 2)),
+                                               r[2], (1, 2))
+
+            for i in range(x.shape[0]):
+                tmpy = y[i,:,:,:,0]
+                center = sp.ndimage.measurements.center_of_mass(tmpy)
+
+                tmpy = all_rots(tmpy)
+
+                for j in range(x.shape[-1]):
+                    tmpx = x[i,:,:,:,j]
+                    tmpx = all_rots(tmpx)
+                    x[i,:,:,:,j] = tmpx
+
+                rot_center = sp.ndimage.measurements.center_of_mass(tmpy)
+
+                # translate back to make rotation around center of mass
+                transl = np.subtract(center, rot_center)
+                tmpy = sp.ndimage.interpolation.shift(tmpy, transl)
+                y[i,:,:,:,0] = tmpy
+
+                for j in range(x.shape[-1]):
+                    x[i,:,:,:,j] = sp.ndimage.interpolation.shift(x[i,:,:,:,j],
+                                                                  transl)
 
         return x, y

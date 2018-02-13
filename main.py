@@ -40,7 +40,7 @@ model.add(Conv3D(1, filter_size,
 #                input_shape=(None, None, None, 1)))
 
 # Training details.
-batch_size = 1
+batch_size = 10
 epochs = 300
 
 opt = optimizers.Adam(lr=0.01)
@@ -49,11 +49,10 @@ model.compile(loss='mean_squared_error', optimizer=opt)
 
 # Load high/low quality images.
 d = 'data/'
-batch_size = 1
 
 partition = dict()
-partition['train'] = ['1']
-partition['validation'] = ['1']
+partition['train'] = ['1'] * 20
+partition['validation'] = ['1'] * 20
 
 params = {'dimns' : (24, 24, 5),
           'channels' : ('aslmean', 'aslstd', 'm0', 't1'),
