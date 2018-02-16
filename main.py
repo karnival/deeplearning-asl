@@ -5,6 +5,7 @@ import keras
 from keras.models import Sequential, load_model
 from keras.layers import Dense, Activation, Flatten, Add, BatchNormalization, TimeDistributed, Average
 from keras.layers import Conv3D
+from keras.callbacks import ModelCheckpoint, TensorBoard
 from keras import regularizers, optimizers 
 
 from generator import DataGenerator
@@ -45,7 +46,7 @@ epochs = 300
 
 opt = optimizers.Adam(lr=0.01)
 
-model.compile(loss='mean_squared_error', optimizer=opt)
+model.compile(loss='mean_squared_error', optimizer=opt, metrics=['mse'])
 
 # Load high/low quality images.
 d = 'data_tmp/'
@@ -62,9 +63,10 @@ params = {'dimns' : (96, 96, 47),
 training_generator = DataGenerator(**params).generate(partition['train'])
 validation_generator = DataGenerator(**params).generate(partition['validation'])
 
-filepath="weights-improvement-{epoch:02d}-{val_acc:.2f}.hdf5"
-checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
-callbacks_list = [checkpoint]
+filepath="weights-improvement-{epoch:02d}-{val_loss:.2f}.hdf5"
+checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='auto')
+tensorboard = TensorBoard(log_dir="logs/")
+callbacks_list = [checkpoint, tensorboard]
 
 # Fit!
 model.fit_generator(generator=training_generator, epochs=epochs,
