@@ -1,11 +1,11 @@
 import numpy as np
-import scipy as sp
+import scipy.ndimage as sp
 import nibabel as nib
 
 import keras
 
 class DataGenerator(object):
-    def __init__(self, dimns, channels, batch_size, data_dir):
+    def __init__(self, dimns, channels, batch_size, data_dir, n_to_use=10):
         self.dim_0 = dimns[0]
         self.dim_1 = dimns[1]
         self.dim_2 = dimns[2]
@@ -14,6 +14,7 @@ class DataGenerator(object):
         self.batch_size = batch_size
 
         self.data_dir = data_dir
+        self.n_to_use = n_to_use;
 
     def generate(self, list_IDs):
         while 1:
@@ -44,29 +45,47 @@ class DataGenerator(object):
         y = np.empty((self.batch_size, self.dim_0, self.dim_1, self.dim_2, 1))
 
         for i, id in enumerate(to_use_IDs):
+            # take a subset of ASL DIs, for finding aslmean and aslstd
+            asl = nib.load(self.data_dir + '/' + id + '/asl_res_moco.nii.gz')
+            asl = asl.get_data()
+            asl = asl[:,:,:,1::2] - asl[:,:,:,0::2]
+
+            n_vols = np.shape(asl)[-1]
+            vols_to_use = np.random.choice(n_vols, self.n_to_use, replace=False)
+
+            asls_to_use = asl[:,:,:,vols_to_use]
+
             for j, chan in enumerate(self.channels):
-                tmp = nib.load(self.data_dir + '/' + id + '/in_' + chan + '.nii.gz')
-                tmp = tmp.get_data()
+                if chan is 'aslmean':
+                    tmp = np.nanmean(asls_to_use, 3)
+                elif chan is 'aslstd':
+                    tmp = np.nanstd(asls_to_use, 3)
+                else:
+                    tmp = nib.load(self.data_dir + '/' + id + '/in_' + chan + '.nii.gz')
+                    tmp = tmp.get_data()
+                
                 x[i,:,:,:,j] = tmp
 
-            y[i,:,:,:,0] = nib.load(self.data_dir + '/' + id + '/out.nii.gz').get_data()
+            y[i,:,:,:,0] = nib.load(self.data_dir + '/' + id +
+                                    '/calib_asl_mean_moco_filtered_masked.nii.gz').get_data()
 
         if augmentation:
             # translation
-            t = np.random.uniform(-5, 5, size=3)
+            t = np.random.uniform(-5, 5, size=2)
+            t = np.append(t, np.random.uniform(-2.5, 2.5)) # through-plane
 
             for i in range(x.shape[0]):
-                y[i,:,:,:,0] = sp.ndimage.interpolation.shift(y[i,:,:,:,0], t)
+                y[i,:,:,:,0] = sp.interpolation.shift(y[i,:,:,:,0], t)
 
                 for j in range(x.shape[-1]):
-                    x[i,:,:,:,j] = sp.ndimage.interpolation.shift(x[i,:,:,:,j], t)
+                    x[i,:,:,:,j] = sp.interpolation.shift(x[i,:,:,:,j], t)
 
             # rotation
             r = np.random.uniform(-20, 20, size=3)
 
 
             # this rotation is around the origin, so need to translate after
-            rot = lambda inp, ang, ax: sp.ndimage.interpolation.rotate(inp, ang, ax, reshape=False)
+            rot = lambda inp, ang, ax: sp.interpolation.rotate(inp, ang, ax, reshape=False)
             all_rots = lambda inp: rot(rot(rot(inp,
                                        r[0], (0, 1)),
                                            r[1], (0, 2)),
@@ -74,7 +93,7 @@ class DataGenerator(object):
 
             for i in range(x.shape[0]):
                 tmpy = y[i,:,:,:,0]
-                center = sp.ndimage.measurements.center_of_mass(tmpy)
+                center = sp.measurements.center_of_mass(tmpy)
 
                 tmpy = all_rots(tmpy)
 
@@ -83,15 +102,15 @@ class DataGenerator(object):
                     tmpx = all_rots(tmpx)
                     x[i,:,:,:,j] = tmpx
 
-                rot_center = sp.ndimage.measurements.center_of_mass(tmpy)
+                rot_center = sp.measurements.center_of_mass(tmpy)
 
                 # translate back to make rotation around center of mass
                 transl = np.subtract(center, rot_center)
-                tmpy = sp.ndimage.interpolation.shift(tmpy, transl)
+                tmpy = sp.interpolation.shift(tmpy, transl)
                 y[i,:,:,:,0] = tmpy
 
                 for j in range(x.shape[-1]):
-                    x[i,:,:,:,j] = sp.ndimage.interpolation.shift(x[i,:,:,:,j],
+                    x[i,:,:,:,j] = sp.interpolation.shift(x[i,:,:,:,j],
                                                                   transl)
 
         return x, y

@@ -40,7 +40,7 @@ model.add(Conv3D(1, filter_size,
 #                input_shape=(None, None, None, 1)))
 
 # Training details.
-batch_size = 10
+batch_size = 1
 epochs = 300
 
 opt = optimizers.Adam(lr=0.01)
@@ -48,13 +48,13 @@ opt = optimizers.Adam(lr=0.01)
 model.compile(loss='mean_squared_error', optimizer=opt)
 
 # Load high/low quality images.
-d = 'data/'
+d = 'data_tmp/'
 
 partition = dict()
-partition['train'] = ['1'] * 20
-partition['validation'] = ['1'] * 20
+partition['train'] = ['11610']
+partition['validation'] = ['11610']
 
-params = {'dimns' : (24, 24, 5),
+params = {'dimns' : (96, 96, 47),
           'channels' : ('aslmean', 'aslstd', 'm0', 't1'),
           'data_dir' : d,
           'batch_size': batch_size}
@@ -64,8 +64,8 @@ validation_generator = DataGenerator(**params).generate(partition['validation'])
 
 # Fit!
 model.fit_generator(generator=training_generator, epochs=epochs,
-          steps_per_epoch=len(partition['train'])//batch_size,
+          steps_per_epoch=1,
           validation_data=validation_generator,
-          validation_steps=len(partition['validation'])//batch_size)
+          validation_steps=1)
 
 model.save('overfitted_model.hd5')
