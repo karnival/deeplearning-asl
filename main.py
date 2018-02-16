@@ -62,10 +62,15 @@ params = {'dimns' : (96, 96, 47),
 training_generator = DataGenerator(**params).generate(partition['train'])
 validation_generator = DataGenerator(**params).generate(partition['validation'])
 
+filepath="weights-improvement-{epoch:02d}-{val_acc:.2f}.hdf5"
+checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
+callbacks_list = [checkpoint]
+
 # Fit!
 model.fit_generator(generator=training_generator, epochs=epochs,
           steps_per_epoch=1,
           validation_data=validation_generator,
-          validation_steps=1)
+          validation_steps=1,
+          callbacks=callbacks_list)
 
 model.save('overfitted_model.hd5')
