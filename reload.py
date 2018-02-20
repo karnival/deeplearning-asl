@@ -6,10 +6,10 @@ from keras.models import Sequential, load_model
 
 
 # Load high/low quality images.
-d = 'data/1/'
+d = 'data/11610/'
 
-aslmean = nib.load(d+'in_aslmean.nii.gz').get_data()
-aslstd = nib.load(d+'in_aslstd.nii.gz').get_data()
+aslmean = nib.load(d+'least_squares.nii.gz').get_data()
+aslstd = nib.load(d+'aslstd.nii.gz').get_data()
 m0 = nib.load(d+'in_m0.nii.gz').get_data()
 t1 = nib.load(d+'in_t1.nii.gz').get_data()
 
@@ -23,7 +23,8 @@ prepared_input = np.expand_dims(prepared_input, axis=0)
 
 truth = aslmean
 
-model = load_model('overfitted_model.hd5')
+#model = load_model('overfitted_model.hd5')
+model = load_model('weights-improvement-39-0.00.hdf5')
 
 o1 = model.predict(prepared_input)
 
@@ -34,7 +35,7 @@ print('diff: ', np.nanmean(np.abs(o2[0,:,:,:,0] - truth)))
 
 print('avg: ', np.nanmean(np.abs(truth)))
 
-in_img = nib.load(d+'in_aslmean.nii.gz')
+in_img = nib.load(d+'least_squares.nii.gz')
 out_img = nib.Nifti1Image(np.squeeze(o1[0,:,:,:,0]), None, header=in_img.header)
 out_img.to_filename(d+'test_out.nii.gz')
 out_img2 = nib.Nifti1Image(np.squeeze(o2[0,:,:,:,0]), None, header=in_img.header)

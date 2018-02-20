@@ -4,7 +4,7 @@ import keras
 
 from keras.models import Sequential, load_model
 from keras.layers import Dense, Activation, Flatten, Add, BatchNormalization, TimeDistributed, Average
-from keras.layers import Conv3D
+from keras.layers import Conv3D, Dropout
 from keras.callbacks import ModelCheckpoint, TensorBoard
 from keras import regularizers, optimizers 
 
@@ -13,25 +13,29 @@ from generator import DataGenerator
 # Create network architecture.
 conv_reg_w = 0.01
 n_channels = 4
-filter_pix = 7
+filter_pix = 3
 filter_size = (filter_pix, filter_pix, filter_pix)
 
 model = Sequential()
 model.add(Conv3D(64, filter_size,
                  padding='same',
                  activation='relu', input_shape=(None, None, None, n_channels)))
+model.add(Dropout(0.2))
 model.add(BatchNormalization())
 model.add(Conv3D(64, filter_size,
                  padding='same',
                  activation='relu'))
+model.add(Dropout(0.2))
 model.add(BatchNormalization())
 model.add(Conv3D(64, filter_size,
                  padding='same',
                  activation='relu'))
+model.add(Dropout(0.2))
 model.add(BatchNormalization())
 model.add(Conv3D(64, filter_size,
                  padding='same',
                  activation='relu'))
+model.add(Dropout(0.2))
 model.add(BatchNormalization())
 #model.add(Dense(1))
 model.add(Conv3D(1, filter_size,
@@ -41,7 +45,7 @@ model.add(Conv3D(1, filter_size,
 #                input_shape=(None, None, None, 1)))
 
 # Training details.
-batch_size = 5
+batch_size = 3
 epochs = 1000
 
 opt = optimizers.Adam(lr=0.01)
@@ -49,7 +53,7 @@ opt = optimizers.Adam(lr=0.01)
 model.compile(loss='mean_squared_error', optimizer=opt, metrics=['mse'])
 
 # Load high/low quality images.
-d = 'data_tmp/'
+d = 'data/'
 
 partition = dict()
 partition['train'] = ['92267', '48775', '74343', '35162', '27155', '67504', 
