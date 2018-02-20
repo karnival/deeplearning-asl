@@ -50,10 +50,19 @@ class DataGenerator(object):
             asl = asl.get_data()
             asl = asl[:,:,:,1::2] - asl[:,:,:,0::2]
 
-            n_vols = np.shape(asl)[-1]
-            vols_to_use = np.random.choice(n_vols, self.n_to_use, replace=False)
+            bmask = nib.load(self.data_dir + '/' + id + '/bmask_t1.nii.gz')
 
-            asls_to_use = asl[:,:,:,vols_to_use]
+            asl[np.where(bmask==0)] = 0
+
+            if augmentation:
+                n_vols = np.shape(asl)[-1]
+                np.random.seed(1)
+                vols_to_use = np.random.choice(n_vols, self.n_to_use, replace=False)
+                print(vols_to_use)
+
+                asls_to_use = asl[:,:,:,vols_to_use]
+            else:
+                asls_to_use = asl
 
             for j, chan in enumerate(self.channels):
                 if chan is 'aslmean':
@@ -63,11 +72,14 @@ class DataGenerator(object):
                 else:
                     tmp = nib.load(self.data_dir + '/' + id + '/in_' + chan + '.nii.gz')
                     tmp = tmp.get_data()
-                
+                    tmp[np.where(bmask==0)] = 0
+
                 x[i,:,:,:,j] = tmp
 
-            y[i,:,:,:,0] = nib.load(self.data_dir + '/' + id +
+            g_truth = nib.load(self.data_dir + '/' + id +
                                     '/calib_asl_mean_moco_filtered_masked.nii.gz').get_data()
+            g_truth[np.where(bmask==0)] = 0
+            y[i,:,:,:,0] = g_truth 
 
         if augmentation:
             # translation
