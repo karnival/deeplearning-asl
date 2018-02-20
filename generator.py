@@ -56,9 +56,7 @@ class DataGenerator(object):
 
             if augmentation:
                 n_vols = np.shape(asl)[-1]
-                np.random.seed(1)
                 vols_to_use = np.random.choice(n_vols, self.n_to_use, replace=False)
-                print(vols_to_use)
 
                 asls_to_use = asl[:,:,:,vols_to_use]
             else:
