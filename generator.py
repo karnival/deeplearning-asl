@@ -38,7 +38,7 @@ class DataGenerator(object):
         return indices
 
     def _data_generation(self, to_use_IDs):
-        augmentation = True
+        augmentation = False
 
         x = np.empty((self.batch_size, self.dim_0, self.dim_1, self.dim_2,
                       len(self.channels)))
@@ -60,7 +60,7 @@ class DataGenerator(object):
 
                 asls_to_use = asl[:,:,:,vols_to_use]
             else:
-                asls_to_use = asl
+                asls_to_use = asl[:,:,:,0:9]
 
             for j, chan in enumerate(self.channels):
                 if chan is 'aslmean':
