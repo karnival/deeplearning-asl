@@ -87,7 +87,7 @@ partition['validation'] = ['11610']
 
 
 params = {'dimns' : (96, 96, 47),
-          'channels' : ('aslmean', 'aslstd', 'm0', 't1'),
+          'channels' : ('aslmean'),
           'data_dir' : d,
           'batch_size': batch_size}
 

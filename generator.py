@@ -75,7 +75,7 @@ class DataGenerator(object):
                 x[i,:,:,:,j] = tmp
 
             g_truth = nib.load(self.data_dir + '/' + id +
-                                    '/calib_asl_mean_moco_filtered_masked.nii.gz').get_data()
+                                    '/asl_res_moco_filtered_mean.nii.gz').get_data()
             g_truth[np.where(bmask==0)] = 0
             y[i,:,:,:,0] = g_truth 
 
