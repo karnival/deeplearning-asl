@@ -13,14 +13,19 @@ from generator import DataGenerator
 
 # Create network architecture.
 conv_reg_w = 0.01
-n_channels = 4
-filter_pix = 3
+chans = ('aslmean',)
+filter_pix = 7
 filter_size = (filter_pix, filter_pix, filter_pix)
 
 model = Sequential()
 model.add(Conv3D(64, filter_size,
                  padding='same',
-                 activation='relu', input_shape=(None, None, None, n_channels)))
+                 activation='relu', input_shape=(None, None, None, len(chans))))
+#model.add(Dropout(0.2))
+model.add(BatchNormalization())
+model.add(Conv3D(64, filter_size,
+                 padding='same',
+                 activation='relu'))
 #model.add(Dropout(0.2))
 model.add(BatchNormalization())
 model.add(Conv3D(64, filter_size,
@@ -39,7 +44,7 @@ model.add(Conv3D(64, filter_size,
 #model.add(Dropout(0.2))
 model.add(BatchNormalization())
 #model.add(Dense(1))
-model.add(Conv3D(1, filter_size,
+model.add(Conv3D(1, (1, 1, 1),
                  padding='same'))
 
 #model.add(Dense(1, kernel_regularizer=regularizers.l2(0.1),
@@ -87,7 +92,7 @@ partition['validation'] = ['11610']
 
 
 params = {'dimns' : (96, 96, 47),
-          'channels' : ('aslmean'),
+          'channels' : chans,
           'data_dir' : d,
           'batch_size': batch_size}
 
