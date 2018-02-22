@@ -7,8 +7,8 @@ import masked_loss
 
 m_loss = masked_loss.masked_loss_factory()
 
-def normalise(im, mask):
-    im = (im - 10) / 10
+def normalise(im, mask, mu, std):
+    im = (im - mu) / std
 
     im[np.where(mask == 0)] = 0
 
@@ -20,10 +20,10 @@ d = 'data_lores/11610/'
 bmask = nib.load(d+'bmask_t1.nii.gz').get_data()
 #bmask = bmask != 0
 
-loader = lambda fn: normalise(nib.load(d+fn).get_data(), bmask)
+loader = lambda fn, mu, std: normalise(nib.load(d+fn).get_data(), bmask, mu, std)
 
-aslmean = loader('least_squares.nii.gz')
-#aslstd = loader('aslstd.nii.gz')
+aslmean = loader('least_squares.nii.gz', 10, 10)
+aslstd = loader('aslstd.nii.gz', 7, 6)
 #m0 = loader('in_m0.nii.gz')
 #t1 = loader('in_t1.nii.gz')
 
@@ -44,6 +44,10 @@ prepared_input[:,:,:,0] = aslmean
 #prepared_input[:,:,:,2] = m0
 #prepared_input[:,:,:,3] = t1
 prepared_input = np.expand_dims(prepared_input, axis=0)
+aslmean = np.expand_dims(aslmean, axis=0)
+aslmean = np.expand_dims(aslmean, axis=-1)
+aslstd = np.expand_dims(aslstd, axis=0)
+aslstd = np.expand_dims(aslstd, axis=-1)
 
 truth = nib.load(d+'asl_res_moco_filtered_mean.nii.gz').get_data()
 truth[np.where(bmask==0)] = 0
@@ -52,7 +56,7 @@ truth[np.where(bmask==0)] = 0
 model = load_model('weights-improvement-1640-1.69E-06.hdf5',
                    custom_objects={'masked_mse': m_loss})
 
-o1 = (model.predict(prepared_input) * norm_std) + norm_mean
+o1 = (model.predict([aslmean, aslstd]) * norm_std) + norm_mean
 o1[:,bmask==0,0] = 0
 #o1 = model.predict(prepared_input)
 

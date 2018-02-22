@@ -28,7 +28,8 @@ class DataGenerator(object):
 
                 x, y = self._data_generation(to_use_IDs)
 
-                yield x, y
+                yield [np.expand_dims(x[:,:,:,:,0], -1),
+                       np.expand_dims(x[:,:,:,:,1], -1)], y
 
     def _get_exploration_order(self, list_IDs):
         indices = np.arange(len(list_IDs))
@@ -65,8 +66,10 @@ class DataGenerator(object):
             for j, chan in enumerate(self.channels):
                 if chan is 'aslmean':
                     tmp = np.nanmean(asls_to_use, 3)
+                    tmp = (tmp - 10) / 10 # approx z-scaling for PWIs
                 elif chan is 'aslstd':
                     tmp = np.nanstd(asls_to_use, 3)
+                    tmp = (tmp - 7) / 6 # approx z-scaling for PWIs
                 else:
                     tmp = nib.load(self.data_dir + '/' + id + '/in_' + chan + '.nii.gz')
                     tmp = tmp.get_data()
@@ -75,7 +78,6 @@ class DataGenerator(object):
                 if chan is 'm0':
                     m0_unscaled = tmp
 
-                tmp = (tmp - 10) / 10 # approx z-scaling for PWIs
                 tmp[np.where(bmask==0)] = 0
                 x[i,:,:,:,j] = tmp
 

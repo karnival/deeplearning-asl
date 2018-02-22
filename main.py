@@ -1,11 +1,12 @@
 import numpy as np
 
 import keras
+import keras.backend as K
 
 from keras.models import Sequential, load_model, Model
 from keras.layers import Dense, Activation, Flatten, Add, BatchNormalization, TimeDistributed, Average, Input
-from keras.layers import Conv3D, Dropout
-from keras.callbacks import ModelCheckpoint, TensorBoard
+from keras.layers import Conv3D, Dropout, Lambda, Concatenate
+from keras.callbacks import ModelCheckpoint
 from keras import regularizers, optimizers 
 
 from generator import DataGenerator
@@ -14,44 +15,82 @@ from masked_loss import masked_loss_factory
 
 # Create network architecture.
 conv_reg_w = 0.01
-chans = ('aslmean',)
+chans = ('aslmean', 'aslstd')
 filter_pix = 3
 filter_size = (filter_pix, filter_pix, filter_pix)
 
-x = Input(shape=(None, None, None, len(chans)))
+x = Input(shape=(None, None, None, 1))
+aslstd = Input(shape=(None, None, None, 1))
+
 y = Conv3D(64, filter_size,
                  padding='same',
-                 activation='relu', input_shape=(None, None, None, len(chans)))(x)
-y = Dropout(0.2)(y)
+                 activation='relu')(x)
+#y = Dropout(0.2)(y)
 y = BatchNormalization()(y)
 y= Conv3D(64, filter_size,
                  padding='same',
                  activation='relu')(y)
-y = Dropout(0.2)(y)
+#y = Dropout(0.2)(y)
 y = BatchNormalization()(y)
 y = Conv3D(64, filter_size,
                  padding='same',
                  activation='relu')(y)
-y = Dropout(0.2)(y)
+#y = Dropout(0.2)(y)
 y = BatchNormalization()(y)
 y = Conv3D(64, filter_size,
                  padding='same',
                  activation='relu')(y)
-y = Dropout(0.2)(y)
+#y = Dropout(0.2)(y)
 y = BatchNormalization()(y)
 y = Conv3D(64, filter_size,
                  padding='same',
                  activation='relu')(y)
-y = Dropout(0.2)(y)
+#y = Dropout(0.2)(y)
 y = BatchNormalization()(y)
 #model.add(Dense(1))
 y = Conv3D(1, filter_size,
                  padding='same')(y)
-y = keras.layers.add([x, y])
+y = keras.layers.add([y, x])
 
-#model.add(Dense(1, kernel_regularizer=regularizers.l2(0.1),
-#                input_shape=(None, None, None, 1)))
+y2 = Conv3D(64, filter_size,
+                 padding='same',
+                 activation='relu')(aslstd)
+#y2 = Dropout(0.2)(y2)
+y2 = BatchNormalization()(y2)
+y2 = Conv3D(64, filter_size,
+                 padding='same',
+                 activation='relu')(aslstd)
+#y2 = Dropout(0.2)(y2)
+y2 = BatchNormalization()(y2)
+y2 = Conv3D(64, filter_size,
+                 padding='same',
+                 activation='relu')(aslstd)
+#y2 = Dropout(0.2)(y2)
+y2 = BatchNormalization()(y2)
+y2 = Conv3D(1, filter_size,
+                 padding='same')(y2)
+y2 = keras.layers.add([y2, aslstd])
+y2 = Conv3D(1, filter_size,
+                 padding='same')(y2)
 
+y2 = keras.layers.add([aslstd, y2])
+
+y_join = Concatenate()([y, y2])
+y_join = BatchNormalization()(y_join)
+y_join = Conv3D(64, filter_size,
+                 padding='same',
+                 activation='relu')(aslstd)
+#y_join = Dropout(0.2)(y_join)
+y_join = BatchNormalization()(y_join)
+y_join = Conv3D(64, filter_size,
+                 padding='same',
+                 activation='relu')(aslstd)
+#y_join = Dropout(0.2)(y_join)
+y_join = BatchNormalization()(y_join)
+y_join = Conv3D(1, filter_size,
+                 padding='same')(y_join)
+
+y_join = keras.layers.add([x, y_join])
 # Training details.
 batch_size = 3
 epochs = 10000
@@ -60,7 +99,7 @@ opt = optimizers.Adam(lr=0.02)
 
 m_loss = masked_loss_factory()
 
-model = Model(inputs=x, outputs=y)
+model = Model(inputs=[x, aslstd], outputs=y_join)
 
 model.compile(loss=m_loss, optimizer=opt, metrics=['mse', m_loss])
 
