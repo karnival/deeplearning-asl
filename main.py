@@ -5,7 +5,7 @@ import keras
 from keras.models import Sequential, load_model, Model
 from keras.layers import Dense, Activation, Flatten, Add, BatchNormalization, TimeDistributed, Average, Input
 from keras.layers import Conv3D, Dropout
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint, TensorBoard
 from keras import regularizers, optimizers 
 
 from generator import DataGenerator
@@ -104,16 +104,16 @@ training_generator = DataGenerator(**params).generate(partition['train'])
 validation_generator = DataGenerator(**params).generate(partition['validation'])
 
 filepath="weights-improvement-{epoch:02d}-{val_loss:.2E}.hdf5"
-checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='auto', period=10)
+checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='auto', period=1)
 
-#tensorboard = TensorBoard(log_dir="logs/")
-#callbacks_list = [checkpoint, tensorboard]
+tensorboard = TensorBoard(log_dir="logs/")
+callbacks_list = [checkpoint, tensorboard]
 callbacks_list = [checkpoint]
 
 
 # Fit!
 model.fit_generator(generator=training_generator, epochs=epochs,
-          steps_per_epoch=len(partition['train'])//batch_size,
+          steps_per_epoch=max(len(partition['train'])//batch_size, 20),
           validation_data=validation_generator,
           validation_steps=len(partition['validation'])//batch_size,
           callbacks=callbacks_list)
