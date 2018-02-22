@@ -14,5 +14,5 @@ def masked_loss_factory():
 
         return masked_mse
 
-    f.__name__ = 'masked mse'
+    f.__name__ = 'masked_mse'
     return f
