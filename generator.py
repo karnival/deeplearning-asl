@@ -38,7 +38,7 @@ class DataGenerator(object):
         return indices
 
     def _data_generation(self, to_use_IDs):
-        augmentation = False
+        augmentation = True
 
         x = np.empty((self.batch_size, self.dim_0, self.dim_1, self.dim_2,
                       len(self.channels)))
