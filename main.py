@@ -2,8 +2,8 @@ import numpy as np
 
 import keras
 
-from keras.models import Sequential, load_model
-from keras.layers import Dense, Activation, Flatten, Add, BatchNormalization, TimeDistributed, Average
+from keras.models import Sequential, load_model, Model
+from keras.layers import Dense, Activation, Flatten, Add, BatchNormalization, TimeDistributed, Average, Input
 from keras.layers import Conv3D, Dropout
 from keras.callbacks import ModelCheckpoint
 from keras import regularizers, optimizers 
@@ -18,35 +18,36 @@ chans = ('aslmean',)
 filter_pix = 3
 filter_size = (filter_pix, filter_pix, filter_pix)
 
-model = Sequential()
-model.add(Conv3D(64, filter_size,
+x = Input(shape=(None, None, None, len(chans)))
+y = Conv3D(64, filter_size,
                  padding='same',
-                 activation='relu', input_shape=(None, None, None, len(chans))))
+                 activation='relu', input_shape=(None, None, None, len(chans)))(x)
 #model.add(Dropout(0.2))
-model.add(BatchNormalization())
-model.add(Conv3D(64, filter_size,
+y = BatchNormalization()(y)
+y= Conv3D(64, filter_size,
                  padding='same',
-                 activation='relu'))
+                 activation='relu')(y)
 #model.add(Dropout(0.2))
-model.add(BatchNormalization())
-model.add(Conv3D(64, filter_size,
+y = BatchNormalization()(y)
+y = Conv3D(64, filter_size,
                  padding='same',
-                 activation='relu'))
+                 activation='relu')(y)
 #model.add(Dropout(0.2))
-model.add(BatchNormalization())
-model.add(Conv3D(64, filter_size,
+y = BatchNormalization()(y)
+y = Conv3D(64, filter_size,
                  padding='same',
-                 activation='relu'))
+                 activation='relu')(y)
 #model.add(Dropout(0.2))
-model.add(BatchNormalization())
-model.add(Conv3D(64, filter_size,
+y = BatchNormalization()(y)
+y = Conv3D(64, filter_size,
                  padding='same',
-                 activation='relu'))
+                 activation='relu')(y)
 #model.add(Dropout(0.2))
-model.add(BatchNormalization())
+y = BatchNormalization()(y)
 #model.add(Dense(1))
-model.add(Conv3D(1, filter_size,
-                 padding='same'))
+y = Conv3D(1, filter_size,
+                 padding='same')(y)
+y = keras.layers.add([x, y])
 
 #model.add(Dense(1, kernel_regularizer=regularizers.l2(0.1),
 #                input_shape=(None, None, None, 1)))
@@ -58,6 +59,9 @@ epochs = 10000
 opt = optimizers.Adam(lr=0.02)
 
 m_loss = masked_loss_factory()
+
+model = Model(inputs=x, outputs=y)
+
 model.compile(loss=m_loss, optimizer=opt, metrics=['mse', m_loss])
 
 # Load high/low quality images.
