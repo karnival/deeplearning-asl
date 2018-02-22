@@ -152,7 +152,7 @@ callbacks_list = [checkpoint]
 
 # Fit!
 model.fit_generator(generator=training_generator, epochs=epochs,
-          steps_per_epoch=max(len(partition['train'])//batch_size, 20),
+          steps_per_epoch=min(len(partition['train'])//batch_size, 20),
           validation_data=validation_generator,
           validation_steps=len(partition['validation'])//batch_size,
           callbacks=callbacks_list)
