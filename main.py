@@ -53,12 +53,12 @@ model.add(Conv3D(1, filter_size,
 
 # Training details.
 batch_size = 1
-epochs = 1000
+epochs = 10000
 
 opt = optimizers.Adam(lr=0.02)
 
 m_loss = masked_loss_factory()
-model.compile(loss='mean_squared_error', optimizer=opt, metrics=['mse', m_loss])
+model.compile(loss=m_loss, optimizer=opt, metrics=['mse', m_loss])
 
 # Load high/low quality images.
 d = 'data_lores/'
@@ -102,7 +102,7 @@ training_generator = DataGenerator(**params).generate(partition['train'])
 validation_generator = DataGenerator(**params).generate(partition['validation'])
 
 filepath="weights-improvement-{epoch:02d}-{val_loss:.2E}.hdf5"
-checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='auto')
+checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='auto', period=10)
 
 #tensorboard = TensorBoard(log_dir="logs/")
 #callbacks_list = [checkpoint, tensorboard]
