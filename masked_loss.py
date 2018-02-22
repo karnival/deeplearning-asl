@@ -2,9 +2,17 @@ import numpy as np
 
 import keras
 from keras.losses import mean_squared_error
-from keras.backend import dot, not_equal, switch, zeros_like, get_value, set_value, cast, floatx
+import keras.backend as K
+#from keras.backend import dot, not_equal, switch, zeros_like, get_value, set_value, cast, floatx, cast_to_floatx
 
-def masked_loss(y_true, y_pred):
-    mask = cast(not_equal(y_true, 0), floatx())
-    
-    return mean_squared_error(y_true, dot(y_pred, mask))
+def masked_loss_factory():
+    def f(y_true, y_pred):
+        mask = K.not_equal(y_true, 0)
+        mask = K.cast(mask, K.floatx())
+        masked_squared_err = K.square(mask * (y_true - y_pred))
+        masked_mse = K.sum(masked_squared_err) / K.sum(mask)
+
+        return masked_mse
+
+    f.__name__ = 'masked mse'
+    return f

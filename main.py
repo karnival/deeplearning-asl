@@ -5,16 +5,17 @@ import keras
 from keras.models import Sequential, load_model
 from keras.layers import Dense, Activation, Flatten, Add, BatchNormalization, TimeDistributed, Average
 from keras.layers import Conv3D, Dropout
-from keras.callbacks import ModelCheckpoint, TensorBoard
+from keras.callbacks import ModelCheckpoint
 from keras import regularizers, optimizers 
 
 from generator import DataGenerator
 
+from masked_loss import masked_loss_factory
 
 # Create network architecture.
 conv_reg_w = 0.01
 chans = ('aslmean',)
-filter_pix = 7
+filter_pix = 3
 filter_size = (filter_pix, filter_pix, filter_pix)
 
 model = Sequential()
@@ -44,7 +45,7 @@ model.add(Conv3D(64, filter_size,
 #model.add(Dropout(0.2))
 model.add(BatchNormalization())
 #model.add(Dense(1))
-model.add(Conv3D(1, (1, 1, 1),
+model.add(Conv3D(1, filter_size,
                  padding='same'))
 
 #model.add(Dense(1, kernel_regularizer=regularizers.l2(0.1),
@@ -56,10 +57,11 @@ epochs = 1000
 
 opt = optimizers.Adam(lr=0.02)
 
-model.compile(loss='mean_squared_error', optimizer=opt, metrics=['mse'])
+m_loss = masked_loss_factory()
+model.compile(loss='mean_squared_error', optimizer=opt, metrics=['mse', m_loss])
 
 # Load high/low quality images.
-d = 'data/'
+d = 'data_lores/'
 
 partition = dict()
 partition['train'] = ['11610']
@@ -91,7 +93,7 @@ partition['validation'] = ['11610']
 #'82329', '45858', '43607']
 
 
-params = {'dimns' : (96, 96, 47),
+params = {'dimns' : (24, 24, 5),
           'channels' : chans,
           'data_dir' : d,
           'batch_size': batch_size}
@@ -101,8 +103,11 @@ validation_generator = DataGenerator(**params).generate(partition['validation'])
 
 filepath="weights-improvement-{epoch:02d}-{val_loss:.2E}.hdf5"
 checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='auto')
-tensorboard = TensorBoard(log_dir="logs/")
-callbacks_list = [checkpoint, tensorboard]
+
+#tensorboard = TensorBoard(log_dir="logs/")
+#callbacks_list = [checkpoint, tensorboard]
+callbacks_list = [checkpoint]
+
 
 # Fit!
 model.fit_generator(generator=training_generator, epochs=epochs,

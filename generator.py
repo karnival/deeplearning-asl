@@ -48,9 +48,9 @@ class DataGenerator(object):
             # take a subset of ASL DIs, for finding aslmean and aslstd
             asl = nib.load(self.data_dir + '/' + id + '/asl_res_moco.nii.gz')
             asl = asl.get_data()
-            asl = asl[:,:,:,1::2] - asl[:,:,:,0::2]
+            asl = asl[:,:,:,0::2] - asl[:,:,:,1::2]
 
-            bmask = nib.load(self.data_dir + '/' + id + '/bmask_t1.nii.gz')
+            bmask = nib.load(self.data_dir + '/' + id +'/bmask_t1.nii.gz').get_data()
 
             asl[np.where(bmask==0)] = 0
 
@@ -76,7 +76,7 @@ class DataGenerator(object):
                 if chan is 'm0':
                     m0_unscaled = tmp
 
-                tmp = (tmp - np.nanmean(tmp[np.where(bmask!=0)])) / np.nanstd(tmp[np.where(tmp!=0)])
+                tmp = (tmp - np.nanmean(tmp[np.where(bmask!=0)])) / np.nanstd(tmp[np.where(bmask!=0)])
                 tmp[np.where(bmask==0)] = 0
                 x[i,:,:,:,j] = tmp
 
@@ -86,10 +86,10 @@ class DataGenerator(object):
 
             # normalise ground truth by relevant inputs
             same_scale_as_gt = asl_unscaled #/ m0_unscaled
-            same_scale_as_gt[np.isfinite(same_scale_as_gt)==False] = 0
+            #same_scale_as_gt[np.isfinite(same_scale_as_gt)==False] = 0
 
-            norm_mean = np.nanmean(same_scale_as_gt[np.where(bmask!=0)])
-            norm_std = np.nanstd(same_scale_as_gt[np.where(bmask!=0)])
+            norm_mean = np.nanmean(same_scale_as_gt[np.where(bmask != 0)])
+            norm_std = np.nanstd(same_scale_as_gt[np.where(bmask != 0)])
 
             g_truth = (g_truth - norm_mean) / norm_std
             g_truth[np.where(bmask==0)] = 0
