@@ -65,7 +65,6 @@ class DataGenerator(object):
             for j, chan in enumerate(self.channels):
                 if chan is 'aslmean':
                     tmp = np.nanmean(asls_to_use, 3)
-                    asl_unscaled = tmp
                 elif chan is 'aslstd':
                     tmp = np.nanstd(asls_to_use, 3)
                 else:
@@ -76,7 +75,7 @@ class DataGenerator(object):
                 if chan is 'm0':
                     m0_unscaled = tmp
 
-                tmp = (tmp - np.nanmean(tmp[np.where(bmask!=0)])) / np.nanstd(tmp[np.where(bmask!=0)])
+                tmp = (tmp - 10) / 10 # approx z-scaling for PWIs
                 tmp[np.where(bmask==0)] = 0
                 x[i,:,:,:,j] = tmp
 
@@ -85,11 +84,11 @@ class DataGenerator(object):
             g_truth[np.where(bmask==0)] = 0
 
             # normalise ground truth by relevant inputs
-            same_scale_as_gt = asl_unscaled #/ m0_unscaled
+            #same_scale_as_gt = asl_unscaled #/ m0_unscaled
             #same_scale_as_gt[np.isfinite(same_scale_as_gt)==False] = 0
 
-            norm_mean = np.nanmean(same_scale_as_gt[np.where(bmask != 0)])
-            norm_std = np.nanstd(same_scale_as_gt[np.where(bmask != 0)])
+            norm_mean = 10
+            norm_std = 10
 
             g_truth = (g_truth - norm_mean) / norm_std
             g_truth[np.where(bmask==0)] = 0

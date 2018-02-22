@@ -8,7 +8,7 @@ import masked_loss
 m_loss = masked_loss.masked_loss_factory()
 
 def normalise(im, mask):
-    im = (im - np.nanmean(im[np.where(mask != 0)])) / np.nanstd(im[np.where(mask != 0)])
+    im = (im - 10) / 10
 
     im[np.where(mask == 0)] = 0
 
@@ -34,8 +34,8 @@ aslmean_tmp = nib.load(d+'least_squares.nii.gz').get_data()
 same_scale = aslmean_tmp #/ m0_tmp
 #same_scale[np.isfinite(same_scale) == False] = 0
 
-norm_mean = np.nanmean(same_scale[np.where(bmask != 0)])
-norm_std = np.nanstd(same_scale[np.where(bmask != 0)])
+norm_mean = 10
+norm_std = 10
 
 # Net expects an array of images, with channels dimension on end.
 prepared_input = np.empty(np.shape(aslmean) + (1,))
@@ -49,7 +49,7 @@ truth = nib.load(d+'asl_res_moco_filtered_mean.nii.gz').get_data()
 truth[np.where(bmask==0)] = 0
 
 #model = load_model('overfitted_model.hd5')
-model = load_model('weights-improvement-765-5.13E-02.hdf5',
+model = load_model('weights-improvement-999-2.99E-02.hdf5',
                    custom_objects={'masked mse': m_loss})
 
 o1 = (model.predict(prepared_input) * norm_std) + norm_mean
