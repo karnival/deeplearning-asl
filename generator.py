@@ -64,10 +64,10 @@ class DataGenerator(object):
                 asls_to_use = asl[:,:,:,0:9]
 
             for j, chan in enumerate(self.channels):
-                if chan is 'aslmean':
+                if chan == 'aslmean':
                     tmp = np.nanmean(asls_to_use, 3)
                     tmp = (tmp - 10) / 10 # approx z-scaling for PWIs
-                elif chan is 'aslstd':
+                elif chan == 'aslstd':
                     tmp = np.nanstd(asls_to_use, 3)
                     tmp = (tmp - 7) / 6 # approx z-scaling for PWIs
                 else:
@@ -97,47 +97,18 @@ class DataGenerator(object):
             y[i,:,:,:,0] = g_truth 
 
         if augmentation:
-            # translation
-            t = np.random.uniform(-5, 5, size=2)
-            t = np.append(t, np.random.uniform(-2.5, 2.5)) # through-plane
-
             for i in range(x.shape[0]):
+                # translation
+                t = np.random.uniform(-5, 5, size=2)
+                t = np.append(t, np.random.uniform(-2.5, 2.5)) # through-plane
+
                 y[i,:,:,:,0] = sp.interpolation.shift(y[i,:,:,:,0], t)
+
 
                 for j in range(x.shape[-1]):
                     x[i,:,:,:,j] = sp.interpolation.shift(x[i,:,:,:,j], t)
 
-            # rotation
-            r = np.random.uniform(-20, 20, size=3)
-
-
-            # this rotation is around the origin, so need to translate after
-            rot = lambda inp, ang, ax: sp.interpolation.rotate(inp, ang, ax, reshape=False)
-            all_rots = lambda inp: rot(rot(rot(inp,
-                                       r[0], (0, 1)),
-                                           r[1], (0, 2)),
-                                               r[2], (1, 2))
-
-            for i in range(x.shape[0]):
-                tmpy = y[i,:,:,:,0]
-                center = sp.measurements.center_of_mass(tmpy)
-
-                tmpy = all_rots(tmpy)
-
-                for j in range(x.shape[-1]):
-                    tmpx = x[i,:,:,:,j]
-                    tmpx = all_rots(tmpx)
-                    x[i,:,:,:,j] = tmpx
-
-                rot_center = sp.measurements.center_of_mass(tmpy)
-
-                # translate back to make rotation around center of mass
-                transl = np.subtract(center, rot_center)
-                tmpy = sp.interpolation.shift(tmpy, transl)
-                y[i,:,:,:,0] = tmpy
-
-                for j in range(x.shape[-1]):
-                    x[i,:,:,:,j] = sp.interpolation.shift(x[i,:,:,:,j],
-                                                                  transl)
+            # gaussian noise
+            x += np.random.randn(*np.shape(x)) * 0.05
 
         return x, y
