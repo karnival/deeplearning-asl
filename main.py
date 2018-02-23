@@ -1,4 +1,5 @@
 import numpy as np
+import os
 
 import keras
 import keras.backend as K
@@ -6,7 +7,7 @@ import keras.backend as K
 from keras.models import Sequential, load_model, Model
 from keras.layers import Dense, Activation, Flatten, Add, BatchNormalization, TimeDistributed, Average, Input
 from keras.layers import Conv3D, Dropout, Lambda, Concatenate
-from keras.callbacks import ModelCheckpoint
+from keras.callbacks import ModelCheckpoint, TensorBoard
 from keras import regularizers, optimizers 
 
 from generator import DataGenerator
@@ -27,6 +28,7 @@ y = Conv3D(64, filter_size,
                  activation='relu')(x)
 
 #y = Dropout(0.2)(y)
+
 y = BatchNormalization()(y)
 y = Conv3D(64, filter_size,
                  padding='same',
@@ -127,12 +129,12 @@ params = {'dimns' : (96, 96, 47),
 training_generator = DataGenerator(**params).generate(partition['train'])
 validation_generator = DataGenerator(**params).generate(partition['validation'])
 
-filepath="weights-improvement-{epoch:02d}-{val_loss:.2E}.hdf5"
+weights_dir_hash = os.environ.get('WEIGHTS_DIR', './')
+filepath=weights_dir_hash+"/weights-improvement-{epoch:02d}-{val_loss:.2E}.hdf5"
 checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='auto', period=1)
 
 tensorboard = TensorBoard(log_dir="logs/")
 callbacks_list = [checkpoint, tensorboard]
-callbacks_list = [checkpoint]
 
 
 # Fit!
