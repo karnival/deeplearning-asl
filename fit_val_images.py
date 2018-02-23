@@ -51,8 +51,8 @@ for s in subjs:
     in_data[1,:,:,:,0] = mean_2
     #in_data_1[1,:,:,:,1] = std_2
 
-    norm_std = 7
-    norm_mean = 7
+    norm_std = 10
+    norm_mean = 10
 
     out = (model.predict(in_data) * norm_std) + norm_mean
     out[:,bmask==0,0] = 0
