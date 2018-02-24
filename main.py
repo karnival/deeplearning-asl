@@ -25,66 +25,51 @@ aslstd = Input(shape=(None, None, None, 1))
 y = Conv3D(64, filter_size,
                  padding='same',
                  activation='relu')(x)
-#y = Dropout(0.2)(y)
-y = BatchNormalization()(y)
-y= Conv3D(64, filter_size,
-                 padding='same',
-                 activation='relu')(y)
+
 #y = Dropout(0.2)(y)
 y = BatchNormalization()(y)
 y = Conv3D(64, filter_size,
                  padding='same',
                  activation='relu')(y)
+
 #y = Dropout(0.2)(y)
 y = BatchNormalization()(y)
-y = Conv3D(64, filter_size,
-                 padding='same',
-                 activation='relu')(y)
-#y = Dropout(0.2)(y)
-y = BatchNormalization()(y)
-y = Conv3D(64, filter_size,
-                 padding='same',
-                 activation='relu')(y)
-#y = Dropout(0.2)(y)
-y = BatchNormalization()(y)
-#model.add(Dense(1))
 y = Conv3D(1, filter_size,
                  padding='same')(y)
+
 y = keras.layers.add([y, x])
 
 y2 = Conv3D(64, filter_size,
                  padding='same',
                  activation='relu')(aslstd)
+
 #y2 = Dropout(0.2)(y2)
 y2 = BatchNormalization()(y2)
 y2 = Conv3D(64, filter_size,
                  padding='same',
-                 activation='relu')(aslstd)
+                 activation='relu')(y2)
+
 #y2 = Dropout(0.2)(y2)
 y2 = BatchNormalization()(y2)
-y2 = Conv3D(64, filter_size,
-                 padding='same',
-                 activation='relu')(aslstd)
-#y2 = Dropout(0.2)(y2)
-y2 = BatchNormalization()(y2)
-y2 = Conv3D(1, filter_size,
-                 padding='same')(y2)
-y2 = keras.layers.add([y2, aslstd])
 y2 = Conv3D(1, filter_size,
                  padding='same')(y2)
 
 y2 = keras.layers.add([aslstd, y2])
 
 y_join = Concatenate()([y, y2])
-y_join = BatchNormalization()(y_join)
+#y_join = y
+
+#y_join = BatchNormalization()(y_join)
 y_join = Conv3D(64, filter_size,
                  padding='same',
-                 activation='relu')(aslstd)
+                 activation='relu')(y_join)
+
 #y_join = Dropout(0.2)(y_join)
 y_join = BatchNormalization()(y_join)
 y_join = Conv3D(64, filter_size,
                  padding='same',
-                 activation='relu')(aslstd)
+                 activation='relu')(y_join)
+
 #y_join = Dropout(0.2)(y_join)
 y_join = BatchNormalization()(y_join)
 y_join = Conv3D(1, filter_size,
