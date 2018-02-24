@@ -14,6 +14,7 @@ from generator import DataGenerator
 
 from masked_loss import masked_loss_factory
 
+weights_dir_hash = os.environ.get('WEIGHTS_DIR', './')
 # Create network architecture.
 conv_reg_w = 0.01
 chans = ('aslmean', 'aslstd')
@@ -27,14 +28,14 @@ y = Conv3D(64, filter_size,
                  padding='same',
                  activation='relu')(x)
 
-#y = Dropout(0.2)(y)
+y = Dropout(0.2)(y)
 
 y = BatchNormalization()(y)
 y = Conv3D(64, filter_size,
                  padding='same',
                  activation='relu')(y)
 
-#y = Dropout(0.2)(y)
+y = Dropout(0.2)(y)
 y = BatchNormalization()(y)
 y = Conv3D(1, filter_size,
                  padding='same')(y)
@@ -45,13 +46,13 @@ y2 = Conv3D(64, filter_size,
                  padding='same',
                  activation='relu')(aslstd)
 
-#y2 = Dropout(0.2)(y2)
+y2 = Dropout(0.2)(y2)
 y2 = BatchNormalization()(y2)
 y2 = Conv3D(64, filter_size,
                  padding='same',
                  activation='relu')(y2)
 
-#y2 = Dropout(0.2)(y2)
+y2 = Dropout(0.2)(y2)
 y2 = BatchNormalization()(y2)
 y2 = Conv3D(1, filter_size,
                  padding='same')(y2)
@@ -66,20 +67,20 @@ y_join = Conv3D(64, filter_size,
                  padding='same',
                  activation='relu')(y_join)
 
-#y_join = Dropout(0.2)(y_join)
+y_join = Dropout(0.2)(y_join)
 y_join = BatchNormalization()(y_join)
 y_join = Conv3D(64, filter_size,
                  padding='same',
                  activation='relu')(y_join)
 
-#y_join = Dropout(0.2)(y_join)
+y_join = Dropout(0.2)(y_join)
 y_join = BatchNormalization()(y_join)
 y_join = Conv3D(1, filter_size,
                  padding='same')(y_join)
 
 y_join = keras.layers.add([x, y_join])
 # Training details.
-batch_size = 3
+batch_size = 4
 epochs = 10000
 
 opt = optimizers.Adam(lr=0.02)
@@ -87,6 +88,7 @@ opt = optimizers.Adam(lr=0.02)
 m_loss = masked_loss_factory()
 
 model = Model(inputs=[x, aslstd], outputs=y_join)
+#model.load_weights(weights_dir_hash+'/weights-improvement-381-2.93E-02.hdf5')
 
 model.compile(loss=m_loss, optimizer=opt, metrics=['mse', m_loss])
 
@@ -129,7 +131,6 @@ params = {'dimns' : (96, 96, 47),
 training_generator = DataGenerator(**params).generate(partition['train'])
 validation_generator = DataGenerator(**params).generate(partition['validation'])
 
-weights_dir_hash = os.environ.get('WEIGHTS_DIR', './')
 filepath=weights_dir_hash+"/weights-improvement-{epoch:02d}-{val_loss:.2E}.hdf5"
 checkpoint = ModelCheckpoint(filepath, monitor='val_loss', verbose=1, save_best_only=True, mode='auto', period=1)
 
@@ -139,7 +140,7 @@ callbacks_list = [checkpoint, tensorboard]
 
 # Fit!
 model.fit_generator(generator=training_generator, epochs=epochs,
-          steps_per_epoch=min(len(partition['train'])//batch_size, 20),
+          steps_per_epoch=len(partition['train'])//batch_size,
           validation_data=validation_generator,
           validation_steps=len(partition['validation'])//batch_size,
           callbacks=callbacks_list)

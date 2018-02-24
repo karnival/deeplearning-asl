@@ -15,7 +15,7 @@ def normalise(im, mask, mu, std):
     return im
 
 # Load high/low quality images.
-d = 'data/11610/'
+d = 'data_lores/11610/'
 
 bmask = nib.load(d+'bmask_t1.nii.gz').get_data()
 #bmask = bmask != 0
@@ -53,10 +53,10 @@ truth = nib.load(d+'asl_res_moco_filtered_mean.nii.gz').get_data()
 truth[np.where(bmask==0)] = 0
 
 #model = load_model('overfitted_model.hd5')
-model = load_model('weights-improvement-234-2.03E-02.hdf5',
-                   custom_objects={'masked mse': m_loss})
+model = load_model('weights-improvement-1640-1.69E-06.hdf5',
+                   custom_objects={'masked_mse': m_loss})
 
-o1 = (model.predict(aslmean) * norm_std) + norm_mean
+o1 = (model.predict([aslmean, aslstd]) * norm_std) + norm_mean
 o1[:,bmask==0,0] = 0
 #o1 = model.predict(prepared_input)
 
