@@ -53,7 +53,7 @@ class DataGenerator(object):
 
             bmask = nib.load(self.data_dir + '/' + id +'/bmask_t1.nii.gz').get_data()
 
-            asl[np.where(bmask==0)] = 0
+            #asl[np.where(bmask==0)] = 0
 
             if augmentation:
                 n_vols = np.shape(asl)[-1]
@@ -70,10 +70,12 @@ class DataGenerator(object):
                 elif chan == 'aslstd':
                     tmp = np.nanstd(asls_to_use, 3)
                     tmp = (tmp - 7) / 6 # approx z-scaling for PWIs
+                elif chan == 't1':
+                    tmp = nib.load(self.data_dir + '/' + id + '/in_' + chan + '.nii.gz')
+                    tmp = (tmp - 110) / 30 # approx z-scaling for PWIs
                 else:
                     tmp = nib.load(self.data_dir + '/' + id + '/in_' + chan + '.nii.gz')
                     tmp = tmp.get_data()
-                    tmp[np.where(bmask==0)] = 0
 
                 if chan is 'm0':
                     m0_unscaled = tmp
@@ -83,7 +85,6 @@ class DataGenerator(object):
 
             g_truth = nib.load(self.data_dir + '/' + id +
                                     '/asl_res_moco_filtered_mean.nii.gz').get_data()
-            g_truth[np.where(bmask==0)] = 0
 
             # normalise ground truth by relevant inputs
             #same_scale_as_gt = asl_unscaled #/ m0_unscaled
@@ -94,21 +95,27 @@ class DataGenerator(object):
 
             g_truth = (g_truth - norm_mean) / norm_std
             g_truth[np.where(bmask==0)] = 0
-            y[i,:,:,:,0] = g_truth 
 
-        if augmentation:
-            for i in range(x.shape[0]):
+            if augmentation:
                 # translation
                 t = np.random.uniform(-5, 5, size=2)
                 t = np.append(t, np.random.uniform(-2.5, 2.5)) # through-plane
 
-                y[i,:,:,:,0] = sp.interpolation.shift(y[i,:,:,:,0], t)
-
+                g_truth = sp.interpolation.shift(g_truth, t)
+                bmask_trans = sp.interpolation.shift(bmask, t)
+                bmask_trans[np.abs(bmask_trans)<0.01] = 0
+                bmask_trans[bmask_trans != 0] = 1
+                g_truth[bmask_trans == 0] = 0
 
                 for j in range(x.shape[-1]):
                     x[i,:,:,:,j] = sp.interpolation.shift(x[i,:,:,:,j], t)
 
-            # gaussian noise
-            x += np.random.randn(*np.shape(x)) * 0.05
+                # gaussian noise
+                x += np.random.randn(*np.shape(x)) * 0.05
+
+                # need to remask!
+                x[:,bmask_trans == 0,:] = 0
+
+            y[i,:,:,:,0] = g_truth 
 
         return x, y
