@@ -61,26 +61,30 @@ class DataGenerator(object):
 
                 asls_to_use = asl[:,:,:,vols_to_use]
             else:
-                asls_to_use = asl[:,:,:,0:9]
+                asls_to_use = asl[:,:,:,0:self.n_to_use]
 
             for j, chan in enumerate(self.channels):
                 if chan == 'aslmean':
                     tmp = np.nanmean(asls_to_use, 3)
                     tmp = (tmp - 10) / 10 # approx z-scaling for PWIs
+                    #tmp[np.where(bmask < 0.9)] = 0
                 elif chan == 'aslstd':
                     tmp = np.nanstd(asls_to_use, 3)
                     tmp = (tmp - 7) / 6 # approx z-scaling for PWIs
+                    #tmp[np.where(bmask < 0.9)] = 6*3
                 elif chan == 't1':
-                    tmp = nib.load(self.data_dir + '/' + id + '/in_' + chan + '.nii.gz')
+                    tmp = nib.load(self.data_dir + '/' + id + '/in_' + chan + '.nii.gz').get_data()
                     tmp = (tmp - 110) / 30 # approx z-scaling for PWIs
+                    #tmp[np.where(bmask < 0.9)] = 0
                 else:
-                    tmp = nib.load(self.data_dir + '/' + id + '/in_' + chan + '.nii.gz')
+                    tmp = nib.load(self.data_dir + '/' + id + '/in_' + chan + '.nii.gz').get_data()
                     tmp = tmp.get_data()
+                    #tmp[np.where(bmask < 0.9)] = 0
 
                 if chan is 'm0':
                     m0_unscaled = tmp
 
-                tmp[np.where(bmask==0)] = 0
+                #tmp[np.where(bmask < 0.9)] = 0
                 x[i,:,:,:,j] = tmp
 
             g_truth = nib.load(self.data_dir + '/' + id +
@@ -94,7 +98,7 @@ class DataGenerator(object):
             norm_std = 10
 
             g_truth = (g_truth - norm_mean) / norm_std
-            g_truth[np.where(bmask==0)] = 0
+            g_truth[np.where(bmask < 0.9)] = 0
 
             if augmentation:
                 # translation
@@ -114,7 +118,8 @@ class DataGenerator(object):
                 x += np.random.randn(*np.shape(x)) * 0.05
 
                 # need to remask!
-                x[:,bmask_trans == 0,:] = 0
+                #raise Exception('not yet implemented remasking for aslstd')
+                #x[:,bmask_trans == 0,:] = 0
 
             y[i,:,:,:,0] = g_truth 
 
