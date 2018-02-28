@@ -102,8 +102,8 @@ class DataGenerator(object):
 
             if augmentation:
                 # translation
-                t = np.random.uniform(-1, 1, size=2)
-                t = np.append(t, np.random.uniform(-0.5, 0.5)) # through-plane
+                t = np.random.uniform(-5, 5, size=2)
+                t = np.append(t, np.random.uniform(-2.5, 2.5)) # through-plane
 
                 g_truth = sp.interpolation.shift(g_truth, t)
                 bmask_trans = sp.interpolation.shift(bmask, t)
